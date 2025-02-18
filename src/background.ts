@@ -1,6 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "analyzeProblem") {
-      fetch('https://your-backend-api.com/analyze', {
+      fetch('http://localhost:8080/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
