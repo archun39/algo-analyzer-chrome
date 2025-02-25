@@ -3,22 +3,25 @@
     "name": "Baekjoon Problem Analyzer",
     "version": "1.0",
     "description": "백준 사이트에서 문제를 쉽게 분석할 수 있는 확장 프로그램입니다.",
-    "permissions": ["activeTab", "scripting"],
+    "permissions": ["activeTab", "scripting","storage"],
+    "host_permissions": [
+      "http://localhost:8080/*"
+    ],
     "background": {
-      "service_worker": "background.js"
+      "service_worker": "dist/background.js"
     },
     "action": {
-      "default_popup": "popup/popup.html",
+      "default_popup": "popup.html",
       "default_icon": {
-        "16": "assets/icon16.png",
-        "48": "assets/icon48.png",
-        "128": "assets/icon128.png"
+        "16": "assets/mac16.png",
+        "48": "assets/mac48.png",
+        "128": "assets/mac128.png"
       }
     },
     "content_scripts": [
       {
         "matches": ["https://www.acmicpc.net/problem/*"],
-        "js": ["contentScript.js"]
+        "js": ["dist/contentScript.js"]
       }
     ]
   }

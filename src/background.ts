@@ -1,15 +1,23 @@
+/// <reference types="chrome" />
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('백준 분석기가 실행되었습니다');
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // 분석 요청
     if (request.action === "analyzeProblem") {
-      fetch('http://localhost:8080/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ problemId: request.problemId })
-      })
+      console.log(`Received request to analyze problem ID: ${request.problemId}`);
+      fetch(`http://localhost:8080/api/problems/${request.problemId}`)
       .then(response => response.json())
-      .then(data => sendResponse({ success: true, data }))
-      .catch(error => sendResponse({ success: false, error }));
-      return true; // 비동기 응답을 위해 true 반환
+      .then(data => {
+        console.log('Analysis data received:', data);
+        sendResponse({ success: true, data });
+      })
+      .catch(error => {
+        console.error('Error during analysis:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+      return true;
     }
-  });
+});

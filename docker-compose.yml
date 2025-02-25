@@ -1,0 +1,10 @@
+version: '3'
+services:
+  backend:
+    image: your-spring-boot-image
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    volumes:
+      - ./backend:/app 
