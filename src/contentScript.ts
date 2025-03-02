@@ -1,5 +1,45 @@
 // contentScript.ts
 
+// 동적으로 분석 결과에 적용할 CSS 스타일 삽입 (한 번만 실행)
+(function injectAnalysisResultStyles() {
+  if (!document.getElementById("analysisResultStyles")) {
+    const styleEl = document.createElement("style");
+    styleEl.id = "analysisResultStyles";
+    styleEl.innerText = `
+      .problem-section {
+        font-family: 'Arial', sans-serif;
+        margin: 20px 10px;
+      }
+      .problem-section .headline h2 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .problem-section .problem-text {
+        line-height: 1.6;
+        color: #555;
+      }
+      .analysis-item {
+        margin-bottom: 15px;
+      }
+      .analysis-key {
+        font-weight: bold;
+        color: #333;
+      }
+      .analysis-value {
+        margin-left: 5px;
+      }
+      .analysis-reasoning {
+        margin-left: 20px;
+        font-style: italic;
+        color: #666;
+        margin-top: 5px;
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+})();
+
 // 문제 ID를 추출하는 함수
 function getProblemId(): string | null {
   const url = window.location.href;
@@ -7,7 +47,7 @@ function getProblemId(): string | null {
   return match ? match[1] : null;
 }
 
-// 페이지에 버튼 추가
+// 페이지에 분석 버튼 추가
 function addAnalyzeButton(problemId: string) {
   console.log("버튼 시작");
   const existingButton = document.getElementById('analyzeButton');
@@ -70,7 +110,7 @@ function displayAnalysisResult(data: any) {
   const panel = createAnalysisPanel();
   // 분석 응답 데이터 중 analysisResponse 항목만 추출 (없다면 전체 데이터 사용)
   const analysis = data.analysisResponse ? data.analysisResponse : data;
-  // HTML 템플릿 생성 (정의 목록 사용)
+  // HTML 템플릿 생성 (Baekjoon 문제 설명과 유사한 디자인 적용)
   let htmlStr = generateAnalysisHTML(analysis);
   // 패널 내 컨텐츠 영역 업데이트
   const contentContainer = panel.querySelector("#analysisPanelContent");
@@ -140,49 +180,82 @@ function createAnalysisPanel(): HTMLElement {
 
     // 패널을 문서에 추가
     document.body.appendChild(panel);
+    // 페이지 컨텐츠가 패널 뒤에 가려지지 않도록 우측 여백 설정 (선택)
     document.body.style.marginRight = "40%";
   }
   return panel;
 }
 
-// 헬퍼 함수: 분석 데이터로 HTML 템플릿 생성
-function generateAnalysisHTML(analysis: any): string {
-  let htmlStr = "<dl style='margin:0; padding: 0 10px;'>";
-  if (analysis.problemId) {
-    htmlStr += `<dt style="font-weight:bold;">문제번호:</dt><dd>${analysis.problemId}</dd>`;
-  }
-  if (analysis.algorithmType) {
-    htmlStr += `<dt style="font-weight:bold;">알고리즘 유형:</dt><dd>${analysis.algorithmType}</dd>`;
-  }
-  if (analysis.algorithmTypeReasoning) {
-    htmlStr += `<dt style="font-weight:bold;">알고리즘 유형 근거:</dt><dd>${analysis.algorithmTypeReasoning}</dd>`;
-  }
-  if (analysis.dataStructures) {
-    htmlStr += `<dt style="font-weight:bold;">사용된 자료구조:</dt><dd>${analysis.dataStructures}</dd>`;
-  }
-  if (analysis.dataStructuresReasoning) {
-    htmlStr += `<dt style="font-weight:bold;">자료구조 근거:</dt><dd>${analysis.dataStructuresReasoning}</dd>`;
-  }
-  if (analysis.solutionImplementation) {
-    htmlStr += `<dt style="font-weight:bold;">해결 방법:</dt><dd>${analysis.solutionImplementation}</dd>`;
-  }
-  if (analysis.solutionImplementationReasoning) {
-    htmlStr += `<dt style="font-weight:bold;">해결 방법 근거:</dt><dd>${analysis.solutionImplementationReasoning}</dd>`;
-  }
-  if (analysis.spaceComplexity) {
-    htmlStr += `<dt style="font-weight:bold;">공간 복잡도:</dt><dd>${analysis.spaceComplexity}</dd>`;
-  }
-  if (analysis.spaceComplexityReasoning) {
-    htmlStr += `<dt style="font-weight:bold;">공간 복잡도 근거:</dt><dd>${analysis.spaceComplexityReasoning}</dd>`;
-  }
-  if (analysis.timeComplexity !== undefined && analysis.timeComplexity !== null) {
-    htmlStr += `<dt style="font-weight:bold;">시간 복잡도:</dt><dd>${analysis.timeComplexity}</dd>`;
+// 헬퍼 함수: 해결 방법 텍스트를 포맷하여 번호 리스트로 변환 (해결방법 내용이 1. 2. 3. 형식인 경우)
+function formatSolutionSteps(solution: string): string {
+  if (!solution) return '';
+  // 해결 방법 문자열이 "1."으로 시작하면 번호 리스트로 가정
+  if (solution.trim().startsWith("1.")) {
+    // 숫자. 패턴을 기준으로 분리 (예: "1. ...", "2. ..." 등)
+    const items = solution.split(/(?=\d+\.\s+)/g);
+    const formattedItems = items.map(item => {
+      const trimmed = item.trim();
+      const match = trimmed.match(/^\d+\.\s*(.*)$/);
+      return match ? match[1].trim() : trimmed;
+    });
+    return `<ol>${formattedItems.map(item => `<li>${item}</li>`).join('')}</ol>`;
   } else {
-    htmlStr += `<dt style="font-weight:bold;">시간 복잡도:</dt><dd>N/A</dd>`;
+    return `<span class="analysis-value">${solution}</span>`;
   }
-  if (analysis.timeComplexityReasoning) {
-    htmlStr += `<dt style="font-weight:bold;">시간 복잡도 근거:</dt><dd>${analysis.timeComplexityReasoning}</dd>`;
-  }
-  htmlStr += "</dl>";
-  return htmlStr;
+}
+
+// 헬퍼 함수: 분석 데이터로 HTML 템플릿 생성 (Baekjoon 문제 설명과 동일한 디자인 적용)
+// 각 항목은 동일한 스타일을 부여하며, 같은 유형의 근거(있는 경우)는 그 아래에 개행하여 표시합니다.
+function generateAnalysisHTML(analysis: any): string {
+  return `
+    <section id="analysis" class="problem-section">
+      <div class="headline">
+        <h2>문제 분석 결과</h2>
+      </div>
+      <div id="analysis_content" class="problem-text">
+        ${analysis.problemId ? `
+          <div class="analysis-item">
+            <span class="analysis-key">문제번호:</span>
+            <span class="analysis-value">${analysis.problemId}</span>
+          </div>
+        ` : ""}
+  
+        ${analysis.algorithmType ? `
+          <div class="analysis-item">
+            <span class="analysis-key">알고리즘 유형:</span>
+            <span class="analysis-value">${analysis.algorithmType}</span>
+            ${analysis.algorithmTypeReasoning ? `<div class="analysis-reasoning">근거: ${analysis.algorithmTypeReasoning}</div>` : ""}
+          </div>
+        ` : ""}
+  
+        ${analysis.dataStructures ? `
+          <div class="analysis-item">
+            <span class="analysis-key">사용된 자료구조:</span>
+            <span class="analysis-value">${analysis.dataStructures}</span>
+            ${analysis.dataStructuresReasoning ? `<div class="analysis-reasoning">근거: ${analysis.dataStructuresReasoning}</div>` : ""}
+          </div>
+        ` : ""}
+  
+        ${analysis.solutionImplementation ? `
+          <div class="analysis-item">
+            <span class="analysis-key">해결 방법:</span>
+            ${formatSolutionSteps(analysis.solutionImplementation)}
+            ${analysis.solutionImplementationReasoning ? `<div class="analysis-reasoning">근거: ${analysis.solutionImplementationReasoning}</div>` : ""}
+          </div>
+        ` : ""}
+  
+        <div class="analysis-item">
+          <span class="analysis-key">공간 복잡도:</span>
+          <span class="analysis-value">${analysis.spaceComplexity ? analysis.spaceComplexity : "N/A"}</span>
+          ${analysis.spaceComplexityReasoning ? `<div class="analysis-reasoning">근거: ${analysis.spaceComplexityReasoning}</div>` : ""}
+        </div>
+  
+        <div class="analysis-item">
+          <span class="analysis-key">시간 복잡도:</span>
+          <span class="analysis-value">${(analysis.timeComplexity !== undefined && analysis.timeComplexity !== null) ? analysis.timeComplexity : "N/A"}</span>
+          ${analysis.timeComplexityReasoning ? `<div class="analysis-reasoning">근거: ${analysis.timeComplexityReasoning}</div>` : ""}
+        </div>
+      </div>
+    </section>
+  `;
 } 
