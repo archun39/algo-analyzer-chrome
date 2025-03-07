@@ -5,7 +5,7 @@
     "description": "백준 사이트에서 문제를 쉽게 분석할 수 있는 확장 프로그램입니다.",
     "permissions": ["activeTab", "scripting","storage"],
     "host_permissions": [
-      "http://localhost:8080/*"
+      "http://ec2-43-201-25-68.ap-northeast-2.compute.amazonaws.com:8080/*"
     ],
     "background": {
       "service_worker": "dist/background.js"
