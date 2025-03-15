@@ -3,7 +3,7 @@
     "name": "Baekjoon Problem Analyzer",
     "version": "1.0",
     "description": "백준 사이트에서 문제를 쉽게 분석할 수 있는 확장 프로그램입니다.",
-    "permissions": ["activeTab", "scripting","storage"],
+    "permissions": ["activeTab"],
     "host_permissions": [
       "http://ec2-43-201-25-68.ap-northeast-2.compute.amazonaws.com:8080/*"
     ],
