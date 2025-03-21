@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 분석 요청
     if (request.action === "analyzeProblem") {
       console.log(`Received request to analyze problem ID: ${request.problemId}`);
-      fetch(`43.202.140.207/api/problems/${request.problemId}`)
+      fetch(`http://ec2-43-202-140-207.ap-northeast-2.compute.amazonaws.com:8080/api/problems/${request.problemId}`)
         .then(response => response.json())
         .then(data => {
           console.log('Analysis data received:', data);
